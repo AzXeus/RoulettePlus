@@ -288,14 +288,19 @@ simulated function StartMatch()
 	}
 
 	if(functionName == "WepSpec")
-    {
-    		arrStr = SplitString(functParas, "_", false);
-    		WepSpecPerk(int(arrStr[0]), arrStr[1]);
-    }
+	{
+		arrStr = SplitString(functParas, "_", false);
+		WepSpecPerk(int(arrStr[0]), arrStr[1]);
+	}
 
 
 
 	// New StartMatch() Calls
+	if(functionName == "GetDamageModifier")
+	{
+		TRPGetDamageModifier();
+	}
+
 	if(functionName == "UpdatePerks")
 	{
 		TRPUpdatePerks();
@@ -303,12 +308,12 @@ simulated function StartMatch()
 
 	if(functionName == "HasUpgrade_Overwrite")
 	{
-		//HasUpgrade_Overwrite(functParas);
+		TRPHasPerkHelper(functParas);
 	}
 
 	if(functionName == "HasPerk_Overwrite")
 	{
-		TRPHasPerk(functParas);
+		TRPHasPerkHelper(functParas);
 	}
 
 	if(functionName == "GivePerk_Overwrite")
@@ -319,6 +324,11 @@ simulated function StartMatch()
 	if(functionName == "ClearPerks_Overwrite")
 	{
 		//TRPClearPerks(functParas);
+	}
+
+	if(functionName == "InitPlayers")
+	{
+		TRPInitPlayers();
 	}
 
 	if(functionName == "ApplyPsiEffect")
@@ -407,35 +417,31 @@ function ASCSetUnit(optional string UnitName)
 
 function TRPUpdatePerks()
 {
-	local XGUnit kActiveUnit;
 	local UITacticalHUD_PerkContainer kPerkContainer;
 	local TUIPerkInfo kUIPerkInfo;
 	local TPerk kPerk;
-
 	local int i;
 
 	kPerkContainer = UITacticalHUD_PerkContainer(m_kRPlus.Object());
-	kActiveUnit = XComTacticalController(PLAYERCONTROLLER()).GetActiveUnit();
-	m_kRPlus.Object(kActiveUnit);
-	if(kActiveUnit == none)
+	m_kUnit = XComTacticalController(PLAYERCONTROLLER()).GetActiveUnit();
+	if(m_kUnit == none)
 	{
 		return;
 	}
-	i = 0;
 	for(i=173; i < 255; i++)
 	{
-		kPerk = XComTacticalController(PLAYERCONTROLLER()).PERKS().GetPerk(I);
+		kPerk = XComTacticalController(PLAYERCONTROLLER()).PERKS().GetPerk(i);
 		if(kPerk.iPerk == 0)
 		{
-			break;
+			continue;
 		}
 		if(kPerk.iCategory != 0)
 		{
-			break;
+			continue;
 		}
 		if(!kPerk.bShowPerk)
 		{
-			break;
+			continue;
 		}
 
 		if(TRPHasPerk(string(i)))
@@ -443,10 +449,65 @@ function TRPUpdatePerks()
 			kUIPerkInfo.strPerkImage = kPerk.strImage;
 			kUIPerkInfo.strPerkName = kPerk.strName[0];
 			kUIPerkInfo.strCharges = "";
-
-//			m_arrPerkData.AddItem(kUIPerkInfo);
+			kPerkContainer.m_arrPerkData.AddItem(kUIPerkInfo);
 		}
 	}
+}
+
+function TRPUpdateAbilities()
+{
+	local XGSoldierUI kSoldUI;
+	local TTableMenuOption kOption;
+	local TTableMenu kMenu;
+	local int iPerk;
+	
+	StrValue0("True");
+	
+	kSoldUI = XGSoldierUI(m_kRPlus.Object());
+	m_kStratSoldier = kSoldUI.m_kSoldier;
+	kMenu.arrCategories.AddItem(21);
+	
+	for(iPerk=0; iPerk < 255; iPerk++)
+	{
+		if(!kSoldUI.perkMgr().GetPerk(iPerk).bShowPerk)
+		{
+			continue;
+		}
+		if(TRPHasPerk(iPerk))
+		{
+			kOption.arrStrings[0] = kSoldUI.perkMgr().GetPerkName(iPerk);
+			kOption.arrStates[0] = iPerk;
+			kOption.iState = 0;
+			kMenu.arrOptions.AddItem(kOption);
+		}
+	}
+	kMenu.kHeader.arrStrings = kSoldUI.GetHeaderStrings(kMenu.arrCategories);
+	kMenu.kHeader.arrStates = kSoldUI.GetHeaderStates(kMenu.arrCategories);
+	kMenu.bTakesNoInput = true;
+	kSoldUI.m_kAbilities.tblAbilities = kMenu;
+}
+
+function TRPHasPerkHelper(string iPerk)
+{
+	if(int(iPerk) > 172)
+	{
+		StrValue0("True");
+	}
+	else
+	{
+		return;
+	}
+	
+	if(isTactical())
+	{
+		m_kUnit = XGUnit(m_kRPlus.Object());
+	}
+
+	if(isStrategy())
+	{
+		m_kStratSoldier = XGStrategySoldier(m_kRPlus.Object());
+	}
+	TRPHasPerk(int(iPerk));
 }
 
 function bool TRPHasPerk(string pPerk)
@@ -460,10 +521,14 @@ function bool TRPHasPerk(string pPerk)
 	
 	if(isTactical())
 	{
-		kTactUnit = XGUnit(m_kRPlus.Object());
-		if(XGCharacter_Soldier(kTactUnit.GetCharacter()) != none)
+		if(iPerk < 172)
 		{
-			iSoldierID = XGCharacter_Soldier(kTactUnit.GetCharacter()).m_kSoldier.iID;
+			return m_kUnit.GetCharacter().HasUpgrade(iPerk);
+		}
+		
+		if(XGCharacter_Soldier(m_kUnit.GetCharacter()) != none)
+		{
+			iSoldierID = XGCharacter_Soldier(m_kUnit.GetCharacter()).m_kSoldier.iID;
 		}
 		else
 		{
@@ -472,10 +537,15 @@ function bool TRPHasPerk(string pPerk)
 	}
 	if(isStrategy())
 	{
-		kStratUnit = XGStrategySoldier(m_kRPlus.Object());
-		iSoldierID = kStratUnit.m_kSoldier.iID;
+		if(iPerk < 172)
+		{
+			return m_kStratSoldier.HasPerk(iPerk);
+		}
+
+		iSoldierID = m_kStratSoldier.m_kSoldier.iID;
 	}
 	
+	//  Finds the Soldier and checks if the soldier has the perk
 	if(!bIsAlien)
 	{
 		iPos = m_kRPlus.FindSoldierInStorage(iSoldierID);
@@ -491,14 +561,72 @@ function bool TRPHasPerk(string pPerk)
 			return False;
 		}
 	}
-	/*
+	
+	//  Finds the alien and checks if the alien has the perk
 	if(bIsAlien)
 	{
-		
+		iPos = retAlienPos(m_kUnit);
+
+		if(m_kRPCheckpoint.arrAlienStorage[iPos].perks[iPerk] > 0)
+		{
+			StrValue1("True");
+			return True;
+		}
+		else
+		{
+			StrValue1("False");
+			return False;
+		}
 	}
-	*/
+	m_kUnit = none;
+	m_kStratSoldier = none;
 }
 
+function TRPGetDamageModifier()
+{
+	local XGAbility_Targeted kAbility;
+	local int iDmgMod;
+
+	kAbility = XGAbility_Targeted(m_kRPlus.Object());
+	m_kUnit = kAbility.m_kUnit;
+	
+	if(kAbility.m_bCritical)
+	{
+		if(TRPHasPerk(180))
+		{
+			iDmgMod += 2;
+		}
+	}
+	IntValue0(iDmgMod, true);
+}
+
+function TRPInitPlayers()
+{
+	local XGBattle_SP kBattle;
+	local XGAIPlayer kAIPlayer;
+	
+	kBattle = XGBattle_SP(m_kRPlus.Object());
+
+/*	for(i=0; i < kBattle.m_iNumPlayers; i++)
+	{
+		if(XGAIPlayer(kBattle.m_arrPlayers[i]) != none)
+		{
+			kAIPlayer = XGAIPlayer(kBattle.m_arrPlayers[i]);
+			break;
+		}
+	}*/
+
+	// MAKE SURE TO TEST THIS AND SEE IF ALIEN PERKS ARE REMOVED AFTER SAVE
+	TRPFlushAlienPerks();
+}
+
+function TRPFlushAlienPerks()
+{
+	m_kRPCheckpoint.arrAlienStorage.Length = 0;
+}
+
+/*  Replaces ApplyCost() to add functionality for free shot perks.
+ *  Takes into account action cost and removal of that cost.    */
 function AbilityApplyCost()
 {
 	local string strAbility;
@@ -665,6 +793,17 @@ function int CreateUnitStor(XGUnit Unit)
 	}
 
 	return pos;
+}
+
+function int retAlienPos(XGUnit kUnit)
+{
+	//  Identifies the Alien from storage by their ActorNumber to be used where needed
+
+	if(m_kRPCheckpoint.arrAlienStorage.Length > 0 && kUnit != none)
+	{
+		return -1;
+	}
+	return m_kRPCheckpoint.arrAlienStorage.Find('ActorNumber', int(GetRightMost(string(kUnit))));
 }
 	
 function int retUnitPos(XGUnit Unit)
@@ -1424,9 +1563,10 @@ function bool CheckStates(string state)
 
 function CritBonusStart()
 {
-	local array<TSummaryPerk> arrPerks;
+	local array<int> arrPerks;
+	local int iCounter;
 	
-	arrPerks = m_arrCritBonusPerks;
+	//arrPerks = m_arrCritBonusPerks;
 
 	if(arrPerks.Length > 0)
 	{
@@ -1437,9 +1577,10 @@ function CritBonusStart()
 
 function CritPenaltyStart()
 {
-	local array<TSummaryPerk> arrPerks;
+	local array<int> arrPerks;
+	local int iCounter;
 	
-	arrPerks = m_arrCritPenaltyPerks;
+	//arrPerks = m_arrCritPenaltyPerks;
 
 	if(arrPerks.Length > 0)
 	{
@@ -1452,26 +1593,26 @@ function CritBonusLoop()
 {
 	local XGAbility_Targeted kAbility;
 	local XGUnit kUnit;
+	local int iCounter;
 
 	kAbility = XGAbility_Targeted(m_kRPlus.Object());
 	kUnit = kAbility.m_kUnit;
-
-/*
-	if(m_arrCritBonusPerks.iPerk == 180)
+  
+	if(m_arrCritBonusPerks[iCounter].iPerk == 180)
 	{
 		if(kUnit.GetCharacter().HasUpgrade(180))
 		{
-			StrValue1(m_perkNames[m_arrCritBonusPerks.iPerk]);
-			IntValue0(m_arrCritBonusPerks.iValue);
+			StrValue1(m_perkNames[m_arrCritBonusPerks[iCounter].iPerk]);
+			IntValue0(m_arrCritBonusPerks[iCounter].iValue);
 		}
 	}
 
-	if(m_arrCritBonusPerks.iPerk == 190)
+	if(m_arrCritBonusPerks[iCounter].iPerk == 190)
 	{
 		if(kUnit.GetCharacter().HasUpgrade(190) && kAbility.GetPrimaryTarget().IsVulnerableToElectropulse())
 		{
-			StrValue1(m_perkNames[m_arrCritBonusPerks.iPerk]);
-			IntValue0(m_arrCritBonusPerks.iValue);
+			StrValue1(m_perkNames[m_arrCritBonusPerks[iCounter].iPerk]);
+			IntValue0(m_arrCritBonusPerks[iCounter].iValue);
 		}
 	}
 
@@ -1487,17 +1628,17 @@ function CritPenaltyLoop()
 {
 	local XGAbility_Targeted kAbility;
 	local XGUnit kUnit;
+	local int iCounter;
 
 	kAbility = XGAbility_Targeted(m_kRPlus.Object());
 	kUnit = kAbility.m_kUnit;
 
-/*
-	if(m_arrCritPenaltyPerks.iPerk == 179)
+	if(m_arrCritPenaltyPerks[iCounter].iPerk == 179)
 	{
 		if(kAbility.GetPrimaryTarget().GetCharacter().HasUpgrade(179))
 		{
-			StrValue1(m_perkNames[m_arrCritPenaltyPerks.iPerk]);
-			IntValue0(m_arrCritPenaltyPerks.iValue);
+			StrValue1(m_perkNames[m_arrCritPenaltyPerks[iCounter].iPerk]);
+			IntValue0(m_arrCritPenaltyPerks[iCounter].iValue);
 		}
 	}
 
@@ -1511,9 +1652,10 @@ function CritPenaltyLoop()
 
 function HitBonusStart()
 {
-	local array<TSummaryPerk> arrPerks;
+	local array<int> arrPerks;
+	local int iCounter;
 	
-	arrPerks = m_arrHitBonusPerks;
+	//arrPerks = m_arrHitBonusPerks;
 
 	if(arrPerks.Length > 0)
 	{
@@ -1524,9 +1666,10 @@ function HitBonusStart()
 
 function HitPenaltyStart()
 {
-	local array<TSummaryPerk> arrPerks;
+	local array<int> arrPerks;
+	local int iCounter;
 	
-	arrPerks = m_arrHitPenaltyPerks;
+	//arrPerks = m_arrHitPenaltyPerks;
 
 	if(arrPerks.Length > 0)
 	{
@@ -1539,6 +1682,7 @@ function HitBonusLoop()
 {
 	local XGAbility_Targeted kAbility;
 	local XGUnit kUnit;
+	local int iCounter;
 
 	kAbility = XGAbility_Targeted(m_kRPlus.Object());
 	kUnit = kAbility.m_kUnit;
@@ -1551,13 +1695,13 @@ function HitBonusLoop()
 			IntValue0(m_arrHitBonusPerks.iValue);
 		}
 	}
-
-	if(m_arrHitBonusPerks.iPerk == 190)
+*/
+	if(m_arrHitBonusPerks[iCounter].iPerk == 190)
 	{
 		if(kUnit.GetCharacter().HasUpgrade(190) && kAbility.GetPrimaryTarget().IsVulnerableToElectropulse())
 		{
-			StrValue1(m_perkNames[m_arrHitBonusPerks.iPerk]);
-			IntValue0(m_arrHitBonusPerks.iValue);
+			StrValue1(m_perkNames[m_arrHitBonusPerks[iCounter].iPerk]);
+			IntValue0(m_arrHitBonusPerks[iCounter].iValue);
 		}
 	}
 
@@ -1574,6 +1718,7 @@ function HitPenaltyLoop()
 {
 	local XGAbility_Targeted kAbility;
 	local XGUnit kUnit;
+	local int iCounter;
 
 	kAbility = XGAbility_Targeted(m_kRPlus.Object());
 	kUnit = kAbility.m_kUnit;

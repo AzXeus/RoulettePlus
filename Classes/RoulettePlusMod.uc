@@ -433,7 +433,6 @@ function init()
 	`endif
 
 
-
 	createPerkArray();
 
 	CC = CheckConfig();
