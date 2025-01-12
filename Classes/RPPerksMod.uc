@@ -1736,7 +1736,7 @@ function ApplyPsiEffects()
 {
 	local XGUnit kTarget;
 
-	//kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrentAction).m_kTargetedEnemy;
+	kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrAction).m_kTargetedEnemy;
 
 	if(kTarget.GetCharacter().HasUpgrade(189))
 	{
@@ -1753,7 +1753,7 @@ function CorruptMessage()
 	local string msgStr;
 	local int CorruptWillTest, WillChance, UnitWill;
 
-	//kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrentAction).m_kTargetedEnemy;
+	kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrAction).m_kTargetedEnemy;
 
 	CorruptWillTest = (25 + ((kTarget.RecordMoraleLoss(6) / 4) * XGCharacter_Soldier(kTarget.GetCharacter()).m_kSoldier.iRank));
 	UnitWill = m_kUnit.RecordMoraleLoss(7);
