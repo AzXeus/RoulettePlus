@@ -412,16 +412,25 @@ function init()
 
 	MRA = ModRecordActor("Transport", class'RPCheckpoint');
 
-	`ifdebug
-		m_kRPCheckpointrec = GetCheckpointRec();
-		ModRecordActor("Transport", class'RPCheckpointRec');
+	`define FixCompile true
+	`if(`notdefined(FixCompile))
+		/*
+		`ifdebug
+			m_kRPCheckpointrec = GetCheckpointRec();
+			ModRecordActor("Transport", class'RPCheckpointRec');
 	
-		if(class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.Find(class'RPCheckpointRec') == -1)
-			class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.AddItem(class'RPCheckpointRec');
-	`endif
+			if(class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.Find(class'RPCheckpointRec') == -1)
+				class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.AddItem(class'RPCheckpointRec');
+		`endif
+		*/
 
-	if(class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.Find(class'RPCheckpoint') == -1)
-		class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.AddItem(class'RPCheckpoint');
+		if(class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.Find(class'RPCheckpoint') == -1)
+			class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.AddItem(class'RPCheckpoint');
+	`else
+		ModError("RoulettePlus compiled without Checkpoint!");
+		`LogFatal('RoulettePlus', "compiled without Checkpoint!");
+		assert(false);
+	`endif
 
 
 
