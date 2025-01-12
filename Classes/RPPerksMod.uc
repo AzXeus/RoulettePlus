@@ -444,12 +444,11 @@ function TRPUpdatePerks()
 			continue;
 		}
 
-		if(TRPHasPerk(i))
+		if(TRPHasPerk(string(i)))
 		{
 			kUIPerkInfo.strPerkImage = kPerk.strImage;
 			kUIPerkInfo.strPerkName = kPerk.strName[0];
 			kUIPerkInfo.strCharges = "";
-
 			kPerkContainer.m_arrPerkData.AddItem(kUIPerkInfo);
 		}
 	}
@@ -511,10 +510,14 @@ function TRPHasPerkHelper(string iPerk)
 	TRPHasPerk(int(iPerk));
 }
 
-function bool TRPHasPerk(int iPerk)
+function bool TRPHasPerk(string pPerk)
 {
-	local int iSoldierID, iPos;
+	local XGUnit kTactUnit;
+	local XGStrategySoldier kStratUnit;
+	local int iSoldierID, iPos, iPerk;
 	local bool bIsAlien;
+
+	iPerk = int(pPerk);
 	
 	if(isTactical())
 	{
@@ -1568,7 +1571,7 @@ function CritBonusStart()
 	if(arrPerks.Length > 0)
 	{
 		StrValue0("True");
-		iCounter = 0;
+//		iCounter = 0;
 	}
 }
 
@@ -1582,7 +1585,7 @@ function CritPenaltyStart()
 	if(arrPerks.Length > 0)
 	{
 		StrValue0("True");
-		iCounter = 0;
+//		iCounter = 0;
 	}
 }
 
@@ -1594,7 +1597,7 @@ function CritBonusLoop()
 
 	kAbility = XGAbility_Targeted(m_kRPlus.Object());
 	kUnit = kAbility.m_kUnit;
-
+  
 	if(m_arrCritBonusPerks[iCounter].iPerk == 180)
 	{
 		if(kUnit.GetCharacter().HasUpgrade(180))
@@ -1618,6 +1621,7 @@ function CritBonusLoop()
 	{
 		StrValue0("False");
 	}
+*/
 }
 
 function CritPenaltyLoop()
@@ -1643,6 +1647,7 @@ function CritPenaltyLoop()
 	{
 		StrValue0("False");
 	}
+*/
 }
 
 function HitBonusStart()
@@ -1655,7 +1660,7 @@ function HitBonusStart()
 	if(arrPerks.Length > 0)
 	{
 		StrValue0("True");
-		iCounter = 0;
+//		iCounter = 0;
 	}
 }
 
@@ -1669,7 +1674,7 @@ function HitPenaltyStart()
 	if(arrPerks.Length > 0)
 	{
 		StrValue0("True");
-		iCounter = 0;
+//		iCounter = 0;
 	}
 }
 
@@ -1700,11 +1705,13 @@ function HitBonusLoop()
 		}
 	}
 
+
 	iCounter++;
 	if(iCounter > m_arrHitBonusPerks.Length)
 	{
 		StrValue0("False");
 	}
+*/
 }
 
 function HitPenaltyLoop()
@@ -1724,19 +1731,20 @@ function HitPenaltyLoop()
 			IntValue0(m_arrHitPenaltyPerks.iValue);
 		}
 	}
-*/
+
 	iCounter++;
 	if(iCounter > m_arrHitPenaltyPerks.Length)
 	{
 		StrValue0("False");
 	}
+*/
 }
 
 function ApplyPsiEffects()
 {
 	local XGUnit kTarget;
 
-	//kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrentAction).m_kTargetedEnemy;
+	kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrAction).m_kTargetedEnemy;
 
 	if(kTarget.GetCharacter().HasUpgrade(189))
 	{
@@ -1753,7 +1761,7 @@ function CorruptMessage()
 	local string msgStr;
 	local int CorruptWillTest, WillChance, UnitWill;
 
-	//kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrentAction).m_kTargetedEnemy;
+	kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrAction).m_kTargetedEnemy;
 
 	CorruptWillTest = (25 + ((kTarget.RecordMoraleLoss(6) / 4) * XGCharacter_Soldier(kTarget.GetCharacter()).m_kSoldier.iRank));
 	UnitWill = m_kUnit.RecordMoraleLoss(7);
