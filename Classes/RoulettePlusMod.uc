@@ -421,7 +421,7 @@ function init()
 	`endif
 
 	if(class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.Find(class'RPCheckpoint') == -1)
-		class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.AddItem(class'RPCheckpoint');
+//		class'Mod_Checkpoint_StrategyTransport'.default.ActorClassesToDestroy.AddItem(class'RPCheckpoint');
 
 
 
